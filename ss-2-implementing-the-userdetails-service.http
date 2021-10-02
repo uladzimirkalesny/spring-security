@@ -1,0 +1,3 @@
+### s2
+GET http://localhost:8080/hello
+Authorization: Basic Uladzimir 1
