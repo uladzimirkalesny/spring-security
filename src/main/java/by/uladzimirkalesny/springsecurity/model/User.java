@@ -1,17 +1,24 @@
-package by.uladzimirkalesny.springsecurity.service.security;
+package by.uladzimirkalesny.springsecurity.model;
 
-import by.uladzimirkalesny.springsecurity.entity.User;
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
 
-@RequiredArgsConstructor
-public class SpringSecurityUser implements UserDetails {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class User implements UserDetails {
 
-    private final User user;
+    private String username;
+
+    private String password;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -19,36 +26,22 @@ public class SpringSecurityUser implements UserDetails {
     }
 
     @Override
-    public String getPassword() {
-        return user.getPassword();
-    }
-
-    @Override
-    public String getUsername() {
-        return user.getUsername();
-    }
-
-    @Override
     public boolean isAccountNonExpired() {
-        // No-op
         return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        // No-op
         return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        // No-op
         return true;
     }
 
     @Override
     public boolean isEnabled() {
-        // No-op
         return true;
     }
 }
