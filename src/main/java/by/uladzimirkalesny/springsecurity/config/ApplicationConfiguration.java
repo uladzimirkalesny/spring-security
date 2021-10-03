@@ -1,49 +1,47 @@
 package by.uladzimirkalesny.springsecurity.config;
 
-import lombok.RequiredArgsConstructor;
+import by.uladzimirkalesny.springsecurity.security.CustomAuthenticationProvider;
 import lombok.SneakyThrows;
 import org.h2.tools.Server;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
-
-import javax.sql.DataSource;
-
-@RequiredArgsConstructor
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 
 @Configuration
 public class ApplicationConfiguration extends WebSecurityConfigurerAdapter {
 
-    /**
-     * From application.properties / or you should to define bean in the ApplicationConfiguration class.
-     */
-    private final DataSource dataSource;
+    private CustomAuthenticationProvider customAuthenticationProvider;
 
-    @Bean
-    public JdbcUserDetailsManager userDetailsService() {
-        return new JdbcUserDetailsManager(dataSource);
+    @Autowired
+    public void setCustomAuthenticationProvider(CustomAuthenticationProvider customAuthenticationProvider) {
+        this.customAuthenticationProvider = customAuthenticationProvider;
     }
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http
-                .httpBasic();
-        http
-                .csrf().disable();
-        http
-                .authorizeRequests()
-                .mvcMatchers("/addUser").permitAll()
-                .anyRequest().authenticated();
+//    private final CustomAuthenticationProvider customAuthenticationProvider;
 
+//    public ApplicationConfiguration(@Lazy CustomAuthenticationProvider customAuthenticationProvider) {
+//        this.customAuthenticationProvider = customAuthenticationProvider;
+//    }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        var inMemoryUserDetailsManager = new InMemoryUserDetailsManager();
+
+        inMemoryUserDetailsManager.createUser(User.withUsername("Uladzimir").password("1").authorities("read").build());
+
+        return inMemoryUserDetailsManager;
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return NoOpPasswordEncoder.getInstance();
     }
 
     /**
@@ -55,6 +53,11 @@ public class ApplicationConfiguration extends WebSecurityConfigurerAdapter {
     @Bean(initMethod = "start", destroyMethod = "stop")
     public Server inMemoryH2DatabaseServer() {
         return Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "8082");
+    }
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) {
+        auth.authenticationProvider(customAuthenticationProvider);
     }
 
 }
