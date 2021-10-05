@@ -1,17 +1,11 @@
 package by.uladzimirkalesny.springsecurity.security.provider;
 
 import by.uladzimirkalesny.springsecurity.security.authentication.CustomAuthentication;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Component;
 
-@Component
-public class CustomAuthenticationProvider implements AuthenticationProvider {
-
-    @Value("${key}")
-    private String key;
+public record CustomAuthenticationProvider(String key) implements AuthenticationProvider {
 
     @Override
     public Authentication authenticate(Authentication authentication) {

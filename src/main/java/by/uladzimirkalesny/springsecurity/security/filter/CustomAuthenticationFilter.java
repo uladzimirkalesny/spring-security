@@ -1,12 +1,11 @@
 package by.uladzimirkalesny.springsecurity.security.filter;
 
 import by.uladzimirkalesny.springsecurity.security.authentication.CustomAuthentication;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -15,11 +14,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@Component
+@RequiredArgsConstructor
 public class CustomAuthenticationFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
 
