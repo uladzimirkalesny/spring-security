@@ -1,47 +1,50 @@
 package by.uladzimirkalesny.springsecurity.config;
 
-import by.uladzimirkalesny.springsecurity.security.CustomAuthenticationProvider;
+import by.uladzimirkalesny.springsecurity.security.filter.CustomAuthenticationFilter;
+import by.uladzimirkalesny.springsecurity.security.provider.CustomAuthenticationProvider;
 import lombok.SneakyThrows;
 import org.h2.tools.Server;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 @Configuration
 public class ApplicationConfiguration extends WebSecurityConfigurerAdapter {
 
+    private CustomAuthenticationFilter customAuthenticationFilter;
+
     private CustomAuthenticationProvider customAuthenticationProvider;
+
+    @Autowired
+    public void setCustomAuthenticationFilter(CustomAuthenticationFilter customAuthenticationFilter) {
+        this.customAuthenticationFilter = customAuthenticationFilter;
+    }
 
     @Autowired
     public void setCustomAuthenticationProvider(CustomAuthenticationProvider customAuthenticationProvider) {
         this.customAuthenticationProvider = customAuthenticationProvider;
     }
 
-//    private final CustomAuthenticationProvider customAuthenticationProvider;
-
-//    public ApplicationConfiguration(@Lazy CustomAuthenticationProvider customAuthenticationProvider) {
-//        this.customAuthenticationProvider = customAuthenticationProvider;
-//    }
-
-    @Bean
-    public UserDetailsService userDetailsService() {
-        var inMemoryUserDetailsManager = new InMemoryUserDetailsManager();
-
-        inMemoryUserDetailsManager.createUser(User.withUsername("Uladzimir").password("1").authorities("read").build());
-
-        return inMemoryUserDetailsManager;
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(customAuthenticationProvider);
     }
 
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.addFilterAt(customAuthenticationFilter, BasicAuthenticationFilter.class);
+        http.authorizeRequests().anyRequest().permitAll();
+    }
+
+    @Override
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return NoOpPasswordEncoder.getInstance();
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
     }
 
     /**
@@ -53,11 +56,6 @@ public class ApplicationConfiguration extends WebSecurityConfigurerAdapter {
     @Bean(initMethod = "start", destroyMethod = "stop")
     public Server inMemoryH2DatabaseServer() {
         return Server.createTcpServer("-tcp", "-tcpAllowOthers", "-tcpPort", "8082");
-    }
-
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) {
-        auth.authenticationProvider(customAuthenticationProvider);
     }
 
 }
