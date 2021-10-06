@@ -1,10 +1,14 @@
 package by.uladzimirkalesny.springsecurity.config;
 
-import by.uladzimirkalesny.springsecurity.security.filter.CustomAuthenticationFilter;
-import by.uladzimirkalesny.springsecurity.security.provider.CustomAuthenticationProvider;
+import by.uladzimirkalesny.springsecurity.repository.OtpRepository;
+import by.uladzimirkalesny.springsecurity.repository.UserRepository;
+import by.uladzimirkalesny.springsecurity.security.filter.UsernamePasswordAuthenticationFilter;
+import by.uladzimirkalesny.springsecurity.security.provider.UsernameOtpAuthenticationProvider;
+import by.uladzimirkalesny.springsecurity.security.provider.UsernamePasswordAuthenticationProvider;
+import by.uladzimirkalesny.springsecurity.service.JpaUserDetailsService;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.h2.tools.Server;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -12,42 +16,63 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import javax.servlet.Filter;
 
+@RequiredArgsConstructor
+
 @Configuration
 public class ApplicationConfiguration extends WebSecurityConfigurerAdapter {
 
-    @Value("${key}")
-    private String key;
+    private final UserRepository userRepository;
+    private final OtpRepository otpRepository;
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return NoOpPasswordEncoder.getInstance();
+    }
 
     @SneakyThrows
     @Bean
-    public Filter customAuthenticationFilter() {
-        return new CustomAuthenticationFilter(authenticationManagerBean());
+    public Filter usernamePasswordAuthenticationFilter() {
+        return new UsernamePasswordAuthenticationFilter(authenticationManagerBean(), otpRepository);
     }
 
     @Bean
-    public AuthenticationProvider customAuthenticationProvider() {
-        return new CustomAuthenticationProvider(key);
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
+    }
+
+    @Bean
+    public UserDetailsService jpaUserDetailsService() {
+        return new JpaUserDetailsService(userRepository);
+    }
+
+    @Bean
+    public AuthenticationProvider usernamePasswordAuthenticationProvider() {
+        return new UsernamePasswordAuthenticationProvider(jpaUserDetailsService(), passwordEncoder());
+    }
+
+    @Bean
+    public AuthenticationProvider usernameOtpAuthenticationProvider() {
+        return new UsernameOtpAuthenticationProvider(otpRepository);
     }
 
     @Override
-    protected void configure(AuthenticationManagerBuilder auth) {
-        auth.authenticationProvider(customAuthenticationProvider());
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth
+                .authenticationProvider(usernamePasswordAuthenticationProvider())
+                .authenticationProvider(usernameOtpAuthenticationProvider());
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.addFilterAt(customAuthenticationFilter(), BasicAuthenticationFilter.class);
-        http.authorizeRequests().anyRequest().permitAll();
-    }
-
-    @Override
-    @Bean
-    public AuthenticationManager authenticationManagerBean() throws Exception {
-        return super.authenticationManagerBean();
+        http
+                .addFilterAt(usernamePasswordAuthenticationFilter(), BasicAuthenticationFilter.class);
     }
 
     /**
