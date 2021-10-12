@@ -4,6 +4,7 @@ import by.uladzimirkalesny.springsecurity.entity.Otp;
 import by.uladzimirkalesny.springsecurity.repository.OtpRepository;
 import by.uladzimirkalesny.springsecurity.security.authentication.UsernameOtpAuthentication;
 import by.uladzimirkalesny.springsecurity.security.authentication.UsernamePasswordAuthentication;
+import by.uladzimirkalesny.springsecurity.security.manager.TokenManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -21,6 +22,8 @@ public class UsernamePasswordAuthenticationFilter extends OncePerRequestFilter {
     private final AuthenticationManager authenticationManager;
 
     private final OtpRepository otpRepository;
+
+    private final TokenManager tokenManager;
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String USERNAME_HEADER = "username";
@@ -48,7 +51,9 @@ public class UsernamePasswordAuthenticationFilter extends OncePerRequestFilter {
         } else {
             Authentication usernameOtpAuthentication = new UsernameOtpAuthentication(usernameHeaderValue, otpHeaderValue);
             authenticationManager.authenticate(usernameOtpAuthentication);
-            response.setHeader(AUTHORIZATION_HEADER, String.valueOf(UUID.randomUUID()));
+            var token = String.valueOf(UUID.randomUUID());
+            tokenManager.addToken(token);
+            response.setHeader(AUTHORIZATION_HEADER, token);
         }
 
     }

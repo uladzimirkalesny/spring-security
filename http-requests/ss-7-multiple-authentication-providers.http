@@ -1,0 +1,12 @@
+GET http://localhost:8080/login
+username: Uladzimir
+password: 1
+
+###
+GET http://localhost:8080/login
+username: Uladzimir
+otp: <retrieve value from h2 database table OTP>
+
+###
+GET http://localhost:8080/hello
+Authorization: <retrieve value from response>

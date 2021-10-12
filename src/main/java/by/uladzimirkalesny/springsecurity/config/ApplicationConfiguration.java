@@ -2,7 +2,10 @@ package by.uladzimirkalesny.springsecurity.config;
 
 import by.uladzimirkalesny.springsecurity.repository.OtpRepository;
 import by.uladzimirkalesny.springsecurity.repository.UserRepository;
+import by.uladzimirkalesny.springsecurity.security.filter.TokenAuthenticationFilter;
 import by.uladzimirkalesny.springsecurity.security.filter.UsernamePasswordAuthenticationFilter;
+import by.uladzimirkalesny.springsecurity.security.manager.TokenManager;
+import by.uladzimirkalesny.springsecurity.security.provider.TokenAuthenticationProvider;
 import by.uladzimirkalesny.springsecurity.security.provider.UsernameOtpAuthenticationProvider;
 import by.uladzimirkalesny.springsecurity.security.provider.UsernamePasswordAuthenticationProvider;
 import by.uladzimirkalesny.springsecurity.service.JpaUserDetailsService;
@@ -22,6 +25,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import javax.servlet.Filter;
+import java.util.HashSet;
 
 @RequiredArgsConstructor
 
@@ -32,6 +36,7 @@ public class ApplicationConfiguration extends WebSecurityConfigurerAdapter {
     private final OtpRepository otpRepository;
 
     @Bean
+    @SuppressWarnings("deprecation")
     public PasswordEncoder passwordEncoder() {
         return NoOpPasswordEncoder.getInstance();
     }
@@ -39,7 +44,7 @@ public class ApplicationConfiguration extends WebSecurityConfigurerAdapter {
     @SneakyThrows
     @Bean
     public Filter usernamePasswordAuthenticationFilter() {
-        return new UsernamePasswordAuthenticationFilter(authenticationManagerBean(), otpRepository);
+        return new UsernamePasswordAuthenticationFilter(authenticationManagerBean(), otpRepository, tokenManager());
     }
 
     @Bean
@@ -63,16 +68,33 @@ public class ApplicationConfiguration extends WebSecurityConfigurerAdapter {
     }
 
     @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+    protected void configure(AuthenticationManagerBuilder auth) {
         auth
                 .authenticationProvider(usernamePasswordAuthenticationProvider())
-                .authenticationProvider(usernameOtpAuthenticationProvider());
+                .authenticationProvider(usernameOtpAuthenticationProvider())
+                .authenticationProvider(tokenAuthenticationProvider());
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
-                .addFilterAt(usernamePasswordAuthenticationFilter(), BasicAuthenticationFilter.class);
+                .addFilterAt(usernamePasswordAuthenticationFilter(), BasicAuthenticationFilter.class)
+                .addFilterAfter(tokenAuthenticationFilter(), BasicAuthenticationFilter.class);
+    }
+
+    @Bean
+    public TokenManager tokenManager() {
+        return new TokenManager(new HashSet<>());
+    }
+
+    @Bean
+    public Filter tokenAuthenticationFilter() throws Exception {
+        return new TokenAuthenticationFilter(authenticationManagerBean());
+    }
+
+    @Bean
+    public AuthenticationProvider tokenAuthenticationProvider() {
+        return new TokenAuthenticationProvider(tokenManager());
     }
 
     /**
