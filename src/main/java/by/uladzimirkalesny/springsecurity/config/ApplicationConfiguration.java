@@ -80,6 +80,15 @@ public class ApplicationConfiguration extends WebSecurityConfigurerAdapter {
         http
                 .addFilterAt(usernamePasswordAuthenticationFilter(), BasicAuthenticationFilter.class)
                 .addFilterAfter(tokenAuthenticationFilter(), BasicAuthenticationFilter.class);
+
+//        http
+//                .csrf(csrfCustomizer -> {
+//                    csrfCustomizer.ignoringAntMatchers("/csrfdisabled/**");
+//                    csrfCustomizer.csrfTokenRepository(new CustomCsrfTokenRepository());
+//                });
+//
+//        http
+//                .addFilterAfter(new CustomCsrfTokenFilter(), CsrfFilter.class);
     }
 
     @Bean
